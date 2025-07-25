@@ -5,34 +5,113 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Excel Drag & Drop</title>
   <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    nav {
+      background-color: #333;
+      color: #fff;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    nav .logo {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    nav .nav-links {
+      cursor: pointer;
+      color: #fff;
+      text-decoration: underline;
+    }
+
     #drop-area {
       border: 3px dashed #ccc;
       padding: 50px;
       text-align: center;
-      font-family: Arial;
       color: #666;
     }
+
     #drop-area.hover {
       border-color: #000;
       background-color: #f0f0f0;
     }
+
     table {
       border-collapse: collapse;
       margin: 20px 0;
       width: 100%;
-      font-family: Arial;
     }
+
     th, td {
       border: 1px solid #999;
       padding: 8px 12px;
       text-align: left;
     }
+
     th {
       background-color: #f2f2f2;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 300px;
+      border-radius: 5px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .modal input, .modal textarea {
+      width: 90%;
+      margin-top: 10px;
+      padding: 8px;
+    }
+
+    .modal button {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    .modal button:hover {
+      background-color: #218838;
     }
   </style>
 </head>
 <body>
+
+  <nav>
+    <div class="logo">PriceChecker</div>
+    <div class="nav-links" onclick="openModal()">Contact</div>
+  </nav>
 
   <h2>Drag & Drop Excel or CSV File</h2>
   <div id="drop-area">
@@ -43,11 +122,27 @@
 
   <div id="output"></div>
 
+  <!-- Contact Form Modal -->
+  <div id="contactModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h3>Contact Us</h3>
+      <form id="contactForm">
+        <input type="email" name="user_email" placeholder="Your email" required />
+        <textarea name="message" rows="4" placeholder="Describe the error..." required></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
   <script>
+    // EmailJS Init (Replace YOUR_USER_ID)
+    emailjs.init("axGZ4QYoXmOwRc-rr"); // Replace with your EmailJS public key
+
     const dropArea = document.getElementById('drop-area');
 
-    // Drag & drop styles
     ['dragenter', 'dragover'].forEach(event => {
       dropArea.addEventListener(event, e => {
         e.preventDefault();
@@ -81,45 +176,20 @@
       reader.onload = function (e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-
         const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        // Hide the drop area
         document.getElementById('drop-area').style.display = 'none';
-
-        // Convert JSON to HTML table
         const output = document.getElementById('output');
         let html = '<table>';
 
         json.forEach((row, rowIndex) => {
-          let rowHtml = '<tr>';
+          let rowHtml = rowIndex === 0 ? '<tr>' : `<tr style="${getRowStyle(row)}">`;
 
-          if (rowIndex === 0) {
-            // Header row
-            row.forEach(cell => {
-              rowHtml += `<th>${cell ?? ''}</th>`;
-            });
-          } else {
-            const makingPrice = parseFloat(row[2]);
-            const sellingPrice = parseFloat(row[3]);
-            let bgColor = '';
-
-            if (!isNaN(makingPrice) && !isNaN(sellingPrice)) {
-              if (sellingPrice < makingPrice) {
-                bgColor = 'background-color: #f8d7da;'; // light red
-              } else if (sellingPrice === makingPrice) {
-                bgColor = 'background-color: #fff3cd;'; // light yellow
-              }
-            }
-
-            rowHtml = `<tr style="${bgColor}">`;
-            row.forEach(cell => {
-              rowHtml += `<td>${cell ?? ''}</td>`;
-            });
-          }
+          row.forEach(cell => {
+            rowHtml += rowIndex === 0 ? `<th>${cell ?? ''}</th>` : `<td>${cell ?? ''}</td>`;
+          });
 
           rowHtml += '</tr>';
           html += rowHtml;
@@ -131,6 +201,43 @@
 
       reader.readAsArrayBuffer(file);
     }
+
+    function getRowStyle(row) {
+      const makingPrice = parseFloat(row[2]);
+      const sellingPrice = parseFloat(row[3]);
+
+      if (!isNaN(makingPrice) && !isNaN(sellingPrice)) {
+        if (sellingPrice < makingPrice) {
+          return 'background-color: #f8d7da;';
+        } else if (sellingPrice === makingPrice) {
+          return 'background-color: #fff3cd;';
+        }
+      }
+      return '';
+    }
+
+    // Modal functions
+    function openModal() {
+      document.getElementById('contactModal').style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('contactModal').style.display = 'none';
+    }
+
+    // Contact form submit
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      emailjs.sendForm('service_ivdpwoe', 'template_flcizdb', this)
+        .then(() => {
+          alert('Message sent successfully!');
+          closeModal();
+          this.reset();
+        }, (err) => {
+          alert('Failed to send message. Try again.');
+          console.error(err);
+        });
+    });
   </script>
 </body>
 </html>
