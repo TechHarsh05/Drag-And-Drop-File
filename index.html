@@ -1,40 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Excel Drag & Drop</title>
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
-      font-family: Arial, sans-serif;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      background-color: #f9f9f9;
+      color: #333;
+      padding-bottom: 60px;
+      /* prevent footer from overlapping content */
     }
 
     nav {
-      background-color: #333;
+      background-color: #222;
       color: #fff;
       padding: 15px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     }
 
     nav .logo {
-      font-size: 20px;
+      font-size: 24px;
       font-weight: bold;
     }
 
     nav .nav-links {
       cursor: pointer;
+      color: #ddd;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    nav .nav-links:hover {
       color: #fff;
       text-decoration: underline;
     }
 
-    #drop-area {
-      border: 3px dashed #ccc;
-      padding: 50px;
+    h2 {
       text-align: center;
-      color: #666;
+      margin: 30px 0 10px;
+    }
+
+    #drop-area {
+      border: 3px dashed #aaa;
+      padding: 50px 20px;
+      margin: 20px auto;
+      max-width: 700px;
+      background-color: #fff;
+      text-align: center;
+      transition: background-color 0.3s, border-color 0.3s;
+      border-radius: 10px;
     }
 
     #drop-area.hover {
@@ -42,20 +69,61 @@
       background-color: #f0f0f0;
     }
 
-    table {
-      border-collapse: collapse;
-      margin: 20px 0;
-      width: 100%;
+    #drop-area p {
+      font-size: 16px;
+      color: #555;
     }
 
-    th, td {
-      border: 1px solid #999;
-      padding: 8px 12px;
+    #drop-area button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #drop-area button:hover {
+      background-color: #0056b3;
+    }
+
+    table {
+      width: auto;
+      margin: 30px auto;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    th,
+    td {
+      padding: 10px 14px;
+      border: 1px solid #ccc;
       text-align: left;
     }
 
     th {
-      background-color: #f2f2f2;
+      background-color: #007bff;
+      color: #fff;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8f8f8;
+    }
+
+    #table-wrapper {
+      overflow-x: auto;
+      max-width: 95%;
+      margin: 30px auto;
+      padding-bottom: 20px;
+    }
+
+    #output table {
+      min-width: max-content;
+      /* Keeps table from squishing */
+      width: auto;
     }
 
     /* Modal Styles */
@@ -63,64 +131,95 @@
       display: none;
       position: fixed;
       z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
       overflow: auto;
-      background-color: rgba(0,0,0,0.4);
+      background-color: rgba(0, 0, 0, 0.5);
     }
 
     .modal-content {
       background-color: #fff;
       margin: 10% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      width: 300px;
-      border-radius: 5px;
+      padding: 25px;
+      border-radius: 8px;
+      width: 320px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
 
     .close {
-      color: #aaa;
       float: right;
-      font-size: 20px;
+      font-size: 24px;
       font-weight: bold;
+      color: #aaa;
       cursor: pointer;
     }
 
-    .modal input, .modal textarea {
-      width: 90%;
-      margin-top: 10px;
-      padding: 8px;
+    .close:hover {
+      color: #000;
+    }
+
+    .modal input,
+    .modal textarea {
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
 
     .modal button {
-      margin-top: 10px;
-      padding: 8px 12px;
+      margin-top: 15px;
+      padding: 10px 15px;
       background-color: #28a745;
-      color: #fff;
       border: none;
+      color: white;
       cursor: pointer;
+      width: 100%;
+      border-radius: 4px;
+      font-size: 15px;
     }
 
     .modal button:hover {
       background-color: #218838;
     }
+
+    /* Footer */
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #222;
+      color: #ccc;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 14px;
+      box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.2);
+    }
   </style>
 </head>
+
 <body>
 
   <nav>
     <div class="logo">PriceChecker</div>
     <div class="nav-links" onclick="openModal()">Contact</div>
   </nav>
-
+  
   <h2>Drag & Drop Excel or CSV File</h2>
   <div id="drop-area">
     <p>Drop your Excel (.xlsx, .xls) or CSV file here</p>
-    <input type="file" id="fileElem" accept=".xlsx,.xls,.csv" style="display:none"/>
+    <input type="file" id="fileElem" accept=".xlsx,.xls,.csv" style="display:none" />
     <button onclick="document.getElementById('fileElem').click()">Choose File</button>
   </div>
-
-  <div id="output"></div>
+  <div id="table-wrapper">
+    <button id="download" onclick="downloadExcel()">Download as Excel</button>
+    <div id="output">
+    </div>
+  </div>
+  <footer>&copy HarshTech</footer>
 
   <!-- Contact Form Modal -->
   <div id="contactModal" class="modal">
@@ -137,6 +236,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
   <script>
     // EmailJS Init (Replace YOUR_USER_ID)
     emailjs.init("axGZ4QYoXmOwRc-rr"); // Replace with your EmailJS public key
@@ -185,11 +285,57 @@
         let html = '<table>';
 
         json.forEach((row, rowIndex) => {
-          let rowHtml = rowIndex === 0 ? '<tr>' : `<tr style="${getRowStyle(row)}">`;
+          let rowHtml = '<tr>';
 
-          row.forEach(cell => {
-            rowHtml += rowIndex === 0 ? `<th>${cell ?? ''}</th>` : `<td>${cell ?? ''}</td>`;
-          });
+          if (rowIndex === 0) {
+            // Table headers
+            row.forEach(cell => {
+              rowHtml += `<th>${cell ?? ''}</th>`;
+            });
+
+            // Custom header columns
+            rowHtml += `
+          <th>Min SP</th>
+          <th>Max SP</th>
+          <th>Discount %</th>
+          <th>Max SP After 4% disc on Cal Fee</th>
+          <th>Discount - Waiver</th>
+          <th>Status</th>`;
+          } else {
+            row.forEach((cell, colIdx) => {
+              const style = getCellStyle(row, colIdx);
+              rowHtml += `<td style="${style}">${cell ?? ''}</td>`;
+            });
+
+            // Extract required values
+            const Calculated_price = parseFloat(row[3]);
+            const S_P = parseFloat(row[4]);
+            const D_P = parseFloat(row[5]);
+            const waiver = parseFloat(row[6]);
+
+            // Calculated columns
+            const minSP = !isNaN(Calculated_price) ? (Calculated_price * 1.05).toFixed(2) : '';
+            const maxSP = !isNaN(Calculated_price) ? (Calculated_price * 1.15).toFixed(2) : '';
+            const discountPercent = (!isNaN(S_P) && !isNaN(D_P) && S_P > 0)
+              ? (((S_P - D_P) / S_P) * 100).toFixed(2) + '%'
+              : '';
+            const discountStyle = parseFloat(discountPercent) < 5 ? ' style="background-color: #f5a94b;"' : '';
+            const maxSellPrice = !isNaN(Calculated_price) ? (Calculated_price * 0.96).toFixed(2) : '';
+            const discountMinusWaiver = (!isNaN(D_P) && !isNaN(waiver)) ? (D_P - waiver).toFixed(2) : '';
+            const status = (!isNaN(discountMinusWaiver) && !isNaN(Calculated_price) && (D_P - waiver) < (Calculated_price * 0.96))
+              ? `<td style="background-color:#ffcdd2;">Too Low</td>`
+              : `<td></td>`;
+
+            // Add custom cells to row
+            rowHtml += `
+          <td>${minSP}</td>
+          <td>${maxSP}</td>
+          <td${discountStyle}>${discountPercent}</td>
+          <td>${maxSellPrice}</td>
+          <td>${discountMinusWaiver}</td>
+          ${status}
+        `;
+          }
 
           rowHtml += '</tr>';
           html += rowHtml;
@@ -202,19 +348,41 @@
       reader.readAsArrayBuffer(file);
     }
 
-    function getRowStyle(row) {
-      const makingPrice = parseFloat(row[2]);
-      const sellingPrice = parseFloat(row[3]);
+    function getCellStyle(row, columnIndex) {
+      const Calculated_price = parseFloat(row[3]);
+      const S_P = parseFloat(row[4]);
+      const D_P = parseFloat(row[5]);
 
-      if (!isNaN(makingPrice) && !isNaN(sellingPrice)) {
-        if (sellingPrice < makingPrice) {
-          return 'background-color: #f8d7da;';
-        } else if (sellingPrice === makingPrice) {
-          return 'background-color: #fff3cd;';
+      if (isNaN(Calculated_price)) return '';
+
+      if (columnIndex === 4 && !isNaN(S_P)) {
+        const minSP = Calculated_price * 1.05;
+        const maxSP = Calculated_price * 1.15;
+        if (S_P < minSP) return 'background-color: #eded5e;';
+        if (S_P > maxSP) return 'background-color: #e73030;';
+      }
+
+      if (columnIndex === 5 && !isNaN(D_P) && !isNaN(S_P)) {
+        const maxAllowedDiscount = S_P * 0.95;
+        if (D_P > maxAllowedDiscount || D_P < Calculated_price) {
+          return 'background-color: #a0cfe5;';
         }
       }
+
       return '';
     }
+
+    function downloadExcel() {
+      const table = document.querySelector('table');
+      if (!table) return alert("No table to export!");
+
+      const worksheet = XLSX.utils.table_to_sheet(table);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+      XLSX.writeFile(workbook, "Modified_Data.xlsx");
+    }
+
+
 
     // Modal functions
     function openModal() {
@@ -226,7 +394,7 @@
     }
 
     // Contact form submit
-    document.getElementById('contactForm').addEventListener('submit', function(e) {
+    document.getElementById('contactForm').addEventListener('submit', function (e) {
       e.preventDefault();
       emailjs.sendForm('service_ivdpwoe', 'template_flcizdb', this)
         .then(() => {
@@ -240,4 +408,5 @@
     });
   </script>
 </body>
+
 </html>
