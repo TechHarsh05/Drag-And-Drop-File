@@ -1,23 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Excel Drag & Drop</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <nav>
     <div class="logo">PriceChecker</div>
     <button class="nav-links" onclick="openModal()">Contact Us</button>
   </nav>
-  
+
   <div class="theme-toggle" id="themeToggle">
     <div class="theme-toggle-slider">
       <span class="theme-toggle-icon">☀️</span>
     </div>
   </div>
-  
+
   <div class="main-content">
     <h2 id="drop-heading">Drag & Drop Excel or CSV File</h2>
     <div id="drop-area">
@@ -25,9 +27,9 @@
       <input type="file" id="fileElem" accept=".xlsx,.xls,.csv" style="display:none" />
       <button onclick="document.getElementById('fileElem').click()">Choose File</button>
     </div>
-    
+
     <div id="error-container"></div>
-    
+
     <div class="button-container" id="buttonContainer">
       <div class="button-group">
         <select id="customFilter" onchange="applyCustomFilter()">
@@ -37,28 +39,27 @@
           <option value="low-sp">Low SP</option>
           <option value="error-dp">Error Deal Price</option>
           <option value="low-discount">Low Discount</option>
-          <option value="low-waiver">Low Discount-Waiver</option>
           <option value="na-dp">Deal Price = N/A</option>
         </select>
       </div>
-      
+
       <div class="button-group">
         <button id="download" class="icon-button" onclick="downloadExcel()" title="Download as Excel">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
           </svg>
         </button>
       </div>
     </div>
-    
+
     <div id="table-wrapper">
       <div id="output">
       </div>
     </div>
   </div>
-  
+
   <footer>&copy HarshTech</footer>
-  
+
   <div id="contactModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeModal()">&times;</span>
@@ -70,9 +71,10 @@
       </form>
     </div>
   </div>
-  
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
   <script src="script.js"></script>
 </body>
+
 </html>
