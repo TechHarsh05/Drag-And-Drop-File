@@ -175,34 +175,33 @@
           }
         }
 
-        // Everyday deal (Min/Max)
-        let minEverydayDeal = 'N/A';
-        let maxEverydayDeal = 'N/A';
-        let minEverydayStyle = '';
-        let maxEverydayStyle = '';
-        let floor, target, feasible = false;
-        if (!hasSP) {
-          minEverydayDeal = "Not found S.P";
-          maxEverydayDeal = "Not found S.P";
-        } else if (!hasCal) {
-          minEverydayDeal = "Not found Calculated Fee";
-          maxEverydayDeal = "Not found Calculated Fee";
-        } else if (!isNaN(sp) && sp > 0 && !isNaN(calculatedFee)) {
-          floor = calculatedFee * 0.96;
-          target = sp * 0.95;
-          feasible = target >= floor;
-          if (feasible) {
+          // Everyday deal (Min/Max) - FIXED
+          let minEverydayDeal = 'N/A';
+          let maxEverydayDeal = 'N/A';
+          let minEverydayStyle = '';
+          let maxEverydayStyle = '';
+
+          if (!hasSP) {
+            minEverydayDeal = "Not found S.P";
+            maxEverydayDeal = "Not found S.P";
+          } else if (!hasCal) {
+            minEverydayDeal = "Not found Calculated Fee";
+            maxEverydayDeal = "Not found Calculated Fee";
+          } else if (!isNaN(sp) && sp > 0 && !isNaN(calculatedFee)) {
+            const floor = calculatedFee * 0.96;   // Min Everyday Deal
+            const target = sp * 0.95;             // Max Everyday Deal
+            
             minEverydayDeal = floor.toFixed(2);
-            maxEverydayDeal = target.toFixed(2);
-          } else {
-            const msg = 'Cannot provide everyday deal';
-            minEverydayDeal = msg;
-            maxEverydayDeal = msg;
-            minEverydayStyle = ' class="cannot-provide"';
-            maxEverydayStyle = ' class="cannot-provide"';
-            rowClass.push('low-waiver');
+
+            if (target < floor) {
+              // Error if Max < Min
+              maxEverydayDeal = "Cannot provide everyday deal";
+              maxEverydayStyle = ' class="cannot-provide"';
+            } else {
+              maxEverydayDeal = target.toFixed(2);
+            }
           }
-        }
+
 
         // Waiver % (changed from Discount - Waiver)
         let waiverPercentCell = 'N/A';
@@ -219,16 +218,18 @@
           waiverPercentCell = waiverPercentValue.toFixed(2) + '%';
         }
 
-        // Status - Updated rule: "Too Low" when deal price is less than calculated fee
+        // Status - Updated rule: "Too Low" when deal price is less than calculated fee or N/A
         let statusCell = '';
         if (!hasCal) {
           statusCell = "Not found Calculated Fee";
         } else if (!hasDP) {
           statusCell = "Not found Deal Price";
         } else if (isDPZeroOrBlank) {
-          statusCell = '';
+          // Treat N/A deal price as less than calculated fee
+          rowClass.push('low-waiver');
+          statusCell = `<span style="background-color:var(--cannot-provide-bg); display:inline-block; padding:2px 6px; border-radius:4px;">Too Low</span>`;
         } else if (!isNaN(calculatedFee) && !isNaN(dealPrice)) {
-          // Updated rule: Check if deal price is less than calculated fee
+          // Check if deal price is less than calculated fee
           if (dealPrice < calculatedFee) {
             rowClass.push('low-waiver');
             statusCell = `<span style="background-color:var(--cannot-provide-bg); display:inline-block; padding:2px 6px; border-radius:4px;">Too Low</span>`;
@@ -242,70 +243,58 @@
         let maxPriceStyle = '';
         let minPriceNumeric = null; // Store numeric value for comparison
 
-        // Check if deal price is 0 or N/A (updated condition)
-        if (isDPZeroOrBlank) {
-          minPriceOfBestDeal = "Cannot provide best deal";
-          maxPriceOfBestDeal = "Cannot provide best deal";
-          minPriceStyle = ' class="cannot-provide"';
-          maxPriceStyle = ' class="cannot-provide"';
+        // Calculate Min Price of Best Deal - Always calculate based on rules
+        if (!hasCal) {
+          minPriceOfBestDeal = "Not found Calculated Fee";
+        } else if (!hasSP) {
+          minPriceOfBestDeal = "Not found S.P";
+        } else if (!hasWav) {
+          minPriceOfBestDeal = "Not found Waiver";
+        } else if (!isNaN(calculatedFee) && !isNaN(waiverPercentValue)) {
+          // Calculate minPrice: ((calculated fee - (waiver %)) - 4%)
+          const waiverAmount = calculatedFee * (waiverPercentValue / 100);
+          const afterWaiver = calculatedFee - waiverAmount;
+          const fourPercent = afterWaiver * 0.04;
+          const minPrice = afterWaiver - fourPercent;
+
+          if (minPrice > 0) {
+            minPriceOfBestDeal = minPrice.toFixed(2);
+            minPriceNumeric = minPrice; // Store numeric value for comparison with max price
+          } else {
+            minPriceOfBestDeal = 'Cannot provide best deal';
+            minPriceStyle = ' class="cannot-provide"';
+          }
         } else {
-          // Calculate Min Price of Best Deal
-          if (!hasCal) {
-            minPriceOfBestDeal = "Not found Calculated Fee";
-          } else if (!hasSP) {
-            minPriceOfBestDeal = "Not found S.P";
-          } else if (!hasWav) {
-            minPriceOfBestDeal = "Not found Waiver";
-          } else if (!isNaN(calculatedFee) && !isNaN(waiverPercentValue)) {
-            // Calculate minPrice: ((calculated fee - (waiver %)) - 4%)
-            const waiverAmount = calculatedFee * (waiverPercentValue / 100);
-            const afterWaiver = calculatedFee - waiverAmount;
-            const fourPercent = afterWaiver * 0.04;
-            const minPrice = afterWaiver - fourPercent;
+          minPriceOfBestDeal = 'N/A';
+        }
 
-            if (minPrice > 0) {
-              minPriceOfBestDeal = minPrice.toFixed(2);
-              minPriceNumeric = minPrice; // Store numeric value
-            } else {
-              minPriceOfBestDeal = 'Cannot provide best deal';
-              minPriceStyle = ' class="cannot-provide"';
-            }
-          } else {
-            minPriceOfBestDeal = 'N/A';
+        // Calculate Max Price of Best Deal - Updated to treat N/A as less than calculated fee
+        if (!hasSP) {
+          maxPriceOfBestDeal = "Not found S.P";
+        } else if (!hasDP) {
+          maxPriceOfBestDeal = "Not found Deal Price";
+        } else if (!hasCal) {
+          maxPriceOfBestDeal = "Not found Calculated Fee";
+        } else if (!isNaN(sp) && !isNaN(calculatedFee)) {
+          // Rule: if deal price is less than calculated fee OR N/A, then treat SP as deal price
+          let effectiveDealPrice = sp; // Default to SP
+          
+          // Only use actual deal price if it exists and is not less than calculated fee
+          if (!isDPZeroOrBlank && !isNaN(dealPrice) && dealPrice >= calculatedFee) {
+            effectiveDealPrice = dealPrice;
           }
 
-          // Calculate Max Price of Best Deal - Updated with new rule
-          if (!hasDP) {
-            maxPriceOfBestDeal = "Not found Deal Price";
-          } else if (!hasCal) {
-            maxPriceOfBestDeal = "Not found Calculated Fee";
-          } else if (!isNaN(dealPrice) && !isNaN(calculatedFee)) {
-            // New rule: if deal price is less than calculated fee, then treat SP as deal price
-            let effectiveDealPrice = dealPrice;
-            if (dealPrice < calculatedFee) {
-              if (!isNaN(sp)) {
-                effectiveDealPrice = sp;
-              } else {
-                maxPriceOfBestDeal = "Cannot provide best deal (SP not available)";
-                maxPriceStyle = ' class="cannot-provide"';
-              }
-            }
-
-            // Only proceed if we haven't set an error above
-            if (maxPriceOfBestDeal !== "Cannot provide best deal (SP not available)") {
-              const maxPrice = effectiveDealPrice * 0.95;
-              
-              // Compare with min price if available
-              if (minPriceNumeric !== null && maxPrice < minPriceNumeric) {
-                maxPriceOfBestDeal = "Cannot provide best deal";
-                maxPriceStyle = ' class="cannot-provide"';
-              } else {
-                maxPriceOfBestDeal = maxPrice.toFixed(2);
-              }
-            }
+          const maxPrice = effectiveDealPrice * 0.95;
+          
+          // Compare with min price if available
+          if (minPriceNumeric !== null && maxPrice < minPriceNumeric) {
+            maxPriceOfBestDeal = "Cannot provide best deal";
+            maxPriceStyle = ' class="cannot-provide"';
           } else {
-            maxPriceOfBestDeal = 'N/A';
+            maxPriceOfBestDeal = maxPrice.toFixed(2);
           }
+        } else {
+          maxPriceOfBestDeal = 'N/A';
         }
 
         // Row flags
